@@ -18,7 +18,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.Interfaces
         {
             GUI_Objects = new List<GUI.GUI_Object>();
             GUI_Objects.Add(new GUI.CPBackground());
-            controller = new Measurments.MeasurmentsController(50,0,100,1);
+            controller = new Measurments.MeasurmentsController(50,0,100, "%",1);
 
             GUI_Objects.Add(new GUI.ControllDisplayBox(new SFML.System.Vector2f(450, 700), controller));
         }

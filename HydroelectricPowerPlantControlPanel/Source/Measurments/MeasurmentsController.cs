@@ -9,15 +9,15 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
     public class MeasurmentsController :MeasurementCollector
     {
         int step;
-        public MeasurmentsController(int value, int min, int max, int step)
-            : base(value, min, max)
+        public MeasurmentsController(int value, int min, int max, string units, int step)
+            : base(value, min, max, units)
         {
             this.step = step;
         }
 
         public void stepUp()
         {
-            if(value + step >= max) value += step;
+            if(value + step <= max) value += step;
         }
 
         public void stepDown()

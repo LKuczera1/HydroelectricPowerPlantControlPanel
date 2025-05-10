@@ -20,16 +20,21 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
         GUI.DownArrowButton downArrow;
         Vector2i size;
         MeasurmentsController controller;
+
+        CaptionBox captionBox;
+
+        //przeniesc captionBox do DataDisplayBox
         public ControllDisplayBox(Vector2f position, Measurments.MeasurmentsController controller)
             :base(position)
         {
-            size = new Vector2i(200, 50);
+            size = new Vector2i(200, 75);
             renderTexture = new RenderTexture((uint)(size.X),(uint)(size.Y));
             sprite = new Sprite();
 
-            dataDisplayBox = new DataDisplayBox(new Vector2f(0,0), controller);
-            upArrow = new UpArrowButton(new Vector2f(150, 0));
-            downArrow = new DownArrowButton(new Vector2f(150, 25));
+            captionBox = new CaptionBox(new Vector2f(0, 0), "Otwarcie Sluzy");
+            dataDisplayBox = new DataDisplayBox(new Vector2f(0, 25), controller);
+            upArrow = new UpArrowButton(new Vector2f(150, 25));
+            downArrow = new DownArrowButton(new Vector2f(150, 50));
 
             upArrow.click = this.increaseValue;
             downArrow.click = this.decreseValue;
@@ -63,6 +68,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
 
         public override void draw(RenderTexture renderTarget)
         {
+            captionBox.draw(renderTexture);
             dataDisplayBox.draw(renderTexture);
 
             upArrow.draw(renderTexture);

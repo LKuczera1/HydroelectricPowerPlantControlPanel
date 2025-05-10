@@ -9,51 +9,42 @@ using SFML.Window;
 
 namespace HydroelectricPowerPlantControlPanel.Source.GUI
 {
-    public class DataDisplayBox : GUI_Object
+    public class CaptionBox : GUI_Object
     {
-        RenderTexture texture;
-        Sprite sprite;
         RectangleShape rectangle;
         Font font;
         Text text;
-
-        private Measurments.MeasurementCollector collector;
-        public DataDisplayBox(Vector2f position, Measurments.MeasurementCollector collector)
-            :base(position)
+        public CaptionBox(Vector2f position, string caption)
+            : base(position)
         {
             this.position = position;
-            texture = new RenderTexture(200, 50);
-            sprite = new Sprite();
-            sprite.Position = this.position;
-            rectangle = new RectangleShape(new Vector2f(200, 50));
+            rectangle = new RectangleShape(new Vector2f(200, 25));
             rectangle.OutlineThickness = -2;
 
             rectangle.FillColor = new Color(200, 200, 200);
             rectangle.OutlineColor = new Color(70, 70, 70);
+            rectangle.Position = this.position;
 
             font = new Font(Directory.GetCurrentDirectory() + "\\resources\\Calibri.ttf");
             text = new Text();
             text.Font = font;
             text.FillColor = Color.Black;
-            text.Position = new Vector2f(2, 5);
+            text.CharacterSize = 20;
 
-            this.collector = collector;
+            text.DisplayedString = caption;
+
+            text.Position = new Vector2f((200/2)-text.GetLocalBounds().Width/2,1);
         }
 
         public override void draw(RenderTexture renderTarget)
         {
-            texture.Draw(rectangle);
-            texture.Draw(text);
-            texture.Display();
-
-            sprite.Texture = texture.Texture;
-
-            renderTarget.Draw(sprite);
+            renderTarget.Draw(rectangle);
+            renderTarget.Draw(text);
         }
 
         public override void update(Vector2i mousePosition, bool isLMBPressed, List<Keyboard.Key> pressedKeys)
         {
-            text.DisplayedString = collector.ValueWithUnits;
+
         }
     }
 }
