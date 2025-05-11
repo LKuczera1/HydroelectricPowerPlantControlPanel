@@ -21,6 +21,11 @@ namespace HydroelectricPowerPlantControlPanel.Source
 
         FPSCounter FPS;
 
+        public double getDeltaTime
+        {
+            get { return FPS.getDeltaTime(); }
+        }
+
         List<Keyboard.Key> pressedKeys;
 
         Source.Interfaces.Interface currentInterface;

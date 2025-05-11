@@ -17,16 +17,21 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
         Font font;
         Text text;
 
+        CaptionBox captionBox;
+
+        string caption;
+
         private Measurments.MeasurementCollector collector;
-        public DataDisplayBox(Vector2f position, Measurments.MeasurementCollector collector)
+        public DataDisplayBox(Vector2f position, Measurments.MeasurementCollector collector, string caption)
             :base(position)
         {
             this.position = position;
-            texture = new RenderTexture(200, 50);
+            texture = new RenderTexture(200, 75);
             sprite = new Sprite();
             sprite.Position = this.position;
             rectangle = new RectangleShape(new Vector2f(200, 50));
             rectangle.OutlineThickness = -2;
+            rectangle.Position = new Vector2f(0, 25);
 
             rectangle.FillColor = new Color(200, 200, 200);
             rectangle.OutlineColor = new Color(70, 70, 70);
@@ -35,13 +40,19 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
             text = new Text();
             text.Font = font;
             text.FillColor = Color.Black;
-            text.Position = new Vector2f(2, 5);
+            text.Position = new Vector2f(2, 5+25);
 
             this.collector = collector;
+
+            this.caption = caption;
+            captionBox = new CaptionBox(new Vector2f(0,0), caption);
         }
 
         public override void draw(RenderTexture renderTarget)
         {
+            captionBox.draw(texture);
+
+
             texture.Draw(rectangle);
             texture.Draw(text);
             texture.Display();

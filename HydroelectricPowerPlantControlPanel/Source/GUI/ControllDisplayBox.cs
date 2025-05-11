@@ -21,18 +21,14 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
         Vector2i size;
         MeasurmentsController controller;
 
-        CaptionBox captionBox;
-
-        //przeniesc captionBox do DataDisplayBox
-        public ControllDisplayBox(Vector2f position, Measurments.MeasurmentsController controller)
+        public ControllDisplayBox(Vector2f position, Measurments.MeasurmentsController controller, string caption)
             :base(position)
         {
             size = new Vector2i(200, 75);
             renderTexture = new RenderTexture((uint)(size.X),(uint)(size.Y));
             sprite = new Sprite();
 
-            captionBox = new CaptionBox(new Vector2f(0, 0), "Otwarcie Sluzy");
-            dataDisplayBox = new DataDisplayBox(new Vector2f(0, 25), controller);
+            dataDisplayBox = new DataDisplayBox(new Vector2f(0, 0), controller, caption);
             upArrow = new UpArrowButton(new Vector2f(150, 25));
             downArrow = new DownArrowButton(new Vector2f(150, 50));
 
@@ -68,7 +64,6 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
 
         public override void draw(RenderTexture renderTarget)
         {
-            captionBox.draw(renderTexture);
             dataDisplayBox.draw(renderTexture);
 
             upArrow.draw(renderTexture);

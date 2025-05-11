@@ -36,5 +36,10 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
             this.max = max;
             this.units = units;
         }
+
+        public void setValue(int value)
+        {
+            this.value = value;
+        }
     }
 }
