@@ -24,6 +24,27 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
         Measurments.MeasurementCollector waterFlowOutPerHour;
 
+        Measurments.MeasurmentsController waterFlowInController;
+
+        Measurments.MeasurementCollector generatorRPM;
+
+        Measurments.MeasurementCollector generatedPower;
+
+
+        public Measurments.MeasurementCollector GeneratedPower
+        {
+            get { return generatedPower; }
+        }
+        public Measurments.MeasurementCollector GeneratorRPM
+        {
+            get { return generatorRPM; }
+        }
+
+        public Measurments.MeasurmentsController WaterFlowInController
+        {
+            get { return waterFlowInController;}
+        }
+
         public Measurments.MeasurementCollector WaterFlowOutPerHour
         {
             get {  return waterFlowOutPerHour; }
@@ -54,6 +75,12 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             waterFlowOutPerHour = new Measurments.MeasurementCollector(0, 0, int.MaxValue, "m^3/h");
 
+            waterFlowInController = new Measurments.MeasurmentsController(200, 0, 300000, "m^3/h", 100);
+
+            generatorRPM = new Measurments.MeasurementCollector(200, 0, 300000, "RPM/min");
+
+            generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "m^3/h");
+
             waterFlowInPerHour = 500;
 
             waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
@@ -70,11 +97,14 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             deltaTime = 0.277;
 
+            //obliczenia w symulacji sa zepsute
+
             double waterFlowOut = Math.Sqrt(2 * waterLevel.Value * 9.81) * 3600 * ((double)gateLevelController.Value * 0.01);
 
-            Console.WriteLine(waterFlowOut);
+            waterFlowInPerHour = waterFlowInController.Value;
 
             currentWaterVolume += (waterFlowInPerHour - waterFlowOut) * deltaTime;
+
 
             waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
             waterFlowOutPerHour.setValue((int)waterFlowOut);

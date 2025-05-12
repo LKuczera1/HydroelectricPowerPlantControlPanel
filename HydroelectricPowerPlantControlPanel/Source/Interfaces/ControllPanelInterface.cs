@@ -24,8 +24,13 @@ namespace HydroelectricPowerPlantControlPanel.Source.Interfaces
 
             GUI_Objects.Add(new GUI.CPBackground());
             GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(25,260), simulationManager.WaterLevel, "Poziom wody"));
-            GUI_Objects.Add(new GUI.ControllDisplayBox(new SFML.System.Vector2f(450, 700), simulationManager.GateLevelController, "Stopien otwarcia sluzy"));
+            GUI_Objects.Add(new GUI.ControllDisplayBox(new Vector2f(450, 700), simulationManager.GateLevelController, "Stopien otwarcia sluzy"));
             GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(450, 800), simulationManager.WaterFlowOutPerHour, "Przepływ"));
+            GUI_Objects.Add(new GUI.ControllDisplayBox(new Vector2f(25, 25), simulationManager.WaterFlowInController, "Sym: Kontrola doplywu"));
+            GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(940, 690), simulationManager.GeneratorRPM, "Obroty generatora"));
+            GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(940, 790), simulationManager.GeneratedPower, "Generowana moc"));
+
+
 
 
             controller = new Measurments.MeasurmentsController(50,0,100, "%",1);

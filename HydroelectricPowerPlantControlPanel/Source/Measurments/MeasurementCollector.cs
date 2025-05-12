@@ -29,14 +29,16 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
         public int Max
         { get { return max; } }
 
-        public MeasurementCollector(int value, int min, int max, string units)
+        public MeasurementCollector(int value, int min, int max, string units, Action setValue = null)
         {
             this.value = value;
             this.min = min;
             this.max = max;
             this.units = units;
+
         }
 
+        //Only to use by simulationManager
         public void setValue(int value)
         {
             this.value = value;
