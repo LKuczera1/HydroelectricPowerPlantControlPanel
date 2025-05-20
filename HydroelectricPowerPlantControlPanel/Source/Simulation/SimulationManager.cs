@@ -14,8 +14,6 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         double tankWidth, tankHeight, tankDepth;
         double currentWaterVolume;
 
-        double waterFlowInPerHour;
-
         double gateOpeningArea;
 
         Measurments.MeasurementCollector waterLevel;
@@ -65,23 +63,21 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
             tankWidth = 1000;
             tankHeight = 100;
 
-            currentWaterVolume = 20000;
+            currentWaterVolume = 0;
 
-            gateOpeningArea = 25;
+            gateOpeningArea = 8;
 
             waterLevel = new Measurments.MeasurementCollector(((int)currentWaterVolume), 0, 300000000, "m");
 
-            gateLevelController = new Measurments.MeasurmentsController(50, 0, 100, "%", 1);
+            gateLevelController = new Measurments.MeasurmentsController(25, 0, 100, "%", 1);
 
             waterFlowOutPerHour = new Measurments.MeasurementCollector(0, 0, int.MaxValue, "m^3/h");
 
-            waterFlowInController = new Measurments.MeasurmentsController(200, 0, 300000, "m^3/h", 100);
+            waterFlowInController = new Measurments.MeasurmentsController(0, 0, 300000, "m^3/h", 100);
 
             generatorRPM = new Measurments.MeasurementCollector(200, 0, 300000, "RPM/min");
 
             generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "m^3/h");
-
-            waterFlowInPerHour = 500;
 
             waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
         }
@@ -99,15 +95,42 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             //obliczenia w symulacji sa zepsute
 
-            double waterFlowOut = Math.Sqrt(2 * waterLevel.Value * 9.81) * 3600 * ((double)gateLevelController.Value * 0.01);
-
-            waterFlowInPerHour = waterFlowInController.Value;
-
-            currentWaterVolume += (waterFlowInPerHour - waterFlowOut) * deltaTime;
+            //double waterFlowOut = Math.Sqrt(2 * waterLevel.Value * 9.81) * 3600 * ;
 
 
-            waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
-            waterFlowOutPerHour.setValue((int)waterFlowOut);
+            //currentWaterVolume += (waterFlowInPerHour - waterFlowOut) * deltaTime;
+
+
+            //waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
+            //waterFlowOutPerHour.setValue((int)waterFlowOut);
+
+            //Aktualizacja doplywu wody do zbiornika (m3/h)
+
+            waterFlowOutPerHour.setValue(calculateWaterFlowOut());
+
+            currentWaterVolume += waterFlowInController.Value - waterFlowOutPerHour.Value;
+
+            if (currentWaterVolume < 0) currentWaterVolume = 0;
+
+            waterLevel.setValue(calculateWaterLevel());
+        }
+
+        //obliczanie stopnia otwarcia bramy
+        private double calculateOpenedAreaOfGate()
+        {
+            return gateOpeningArea * gateLevelController.Value;
+        }
+
+        //Obliczanie ilosci wyplywajacej wody na podstawie wysokosci slupa wody i poziomu otwarcia bramy ()m3/h
+        private double calculateWaterFlowOut()
+        {
+            return Math.Sqrt(2 * waterLevel.Value * 9.81) * calculateOpenedAreaOfGate();
+        }
+
+        //Obliczanie poziomu tafli wody na podstawie szerokosci, dlugosci i ilosci wody (m3) w zbiorniku
+        public double calculateWaterLevel()
+        {
+            return currentWaterVolume / (tankWidth * tankDepth);
         }
     }
 }

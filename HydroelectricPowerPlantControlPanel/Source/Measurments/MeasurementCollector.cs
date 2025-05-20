@@ -8,28 +8,28 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
 {
     public class MeasurementCollector
     {
-        protected int value;
-        protected int min, max;
+        protected double value;
+        protected double min, max;
 
         protected string units;
 
         public string Units
         { get { return units; } }
 
-        public int Value
+        public double Value
         {
             get { return value; }
         }
 
         public string ValueWithUnits
-        { get { return value.ToString() + " " + units; } }
+        { get { return value.ToString("F1") + " " + units; } }
 
-        public int Min
+        public double Min
         { get { return min; } }
-        public int Max
+        public double Max
         { get { return max; } }
 
-        public MeasurementCollector(int value, int min, int max, string units, Action setValue = null)
+        public MeasurementCollector(double value, double min, double max, string units, Action setValue = null)
         {
             this.value = value;
             this.min = min;
@@ -39,7 +39,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
         }
 
         //Only to use by simulationManager
-        public void setValue(int value)
+        public void setValue(double value)
         {
             this.value = value;
         }

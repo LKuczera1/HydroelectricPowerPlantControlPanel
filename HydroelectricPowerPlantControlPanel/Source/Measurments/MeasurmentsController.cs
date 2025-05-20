@@ -8,8 +8,8 @@ namespace HydroelectricPowerPlantControlPanel.Source.Measurments
 {
     public class MeasurmentsController :MeasurementCollector
     {
-        int step;
-        public MeasurmentsController(int value, int min, int max, string units, int step)
+        double step;
+        public MeasurmentsController(double value, double min, double max, string units, double step)
             : base(value, min, max, units)
         {
             this.step = step;

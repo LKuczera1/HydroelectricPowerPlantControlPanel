@@ -19,6 +19,13 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
 
         protected event EventHandler Click;
 
+        Clock clock;
+        bool isTimeCounted;
+        int changeValueTime;
+        bool haveClockMechanizmBeenActivated;
+        private const int clockMechanizmWaitingTime = 1500;
+        private const int clockActivatedMechanizmTime = 250;
+
         public EventHandler click
         {
             set
@@ -44,6 +51,11 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
             PressedColor = new Color(140, 140, 140);
 
             hasButtonBeenPressed = false;
+
+            clock = new Clock();
+            isTimeCounted = false;
+            haveClockMechanizmBeenActivated = false;
+            changeValueTime = clockMechanizmWaitingTime;
         }
 
         public bool IsMouseOverButton(Vector2i mousePosition)
@@ -64,12 +76,38 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
                 {
                     rectangle.FillColor = PressedColor;
                     hasButtonBeenPressed = true;
+
+                    if(isTimeCounted)
+                    {
+                        if (clock.ElapsedTime.AsMilliseconds() > changeValueTime)
+                        {
+                            clock.Restart();
+                            Click.Invoke(this, EventArgs.Empty);
+                            changeValueTime = clockActivatedMechanizmTime;
+                            haveClockMechanizmBeenActivated  =true;
+                        }
+                    }
+                    else
+                    {
+                        isTimeCounted = true;
+                    }
                     return true;
                 }
                 else if(hasButtonBeenPressed)
                 {
-                    hasButtonBeenPressed = false;
-                    if (Click!=null) Click.Invoke(this, EventArgs.Empty);
+                    if(haveClockMechanizmBeenActivated)
+                    {
+                        isTimeCounted = false;
+                        hasButtonBeenPressed = false;
+                        changeValueTime = clockMechanizmWaitingTime;
+                        haveClockMechanizmBeenActivated = false;
+                        return true;
+                    }
+                    else
+                    {
+                        hasButtonBeenPressed = false;
+                        if (Click != null) Click.Invoke(this, EventArgs.Empty);
+                    }
                 }
             }
             else
