@@ -41,6 +41,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.GUI
             text.Font = font;
             text.FillColor = Color.Black;
             text.Position = new Vector2f(2, 5+25);
+            text.CharacterSize = 28;
 
             this.collector = collector;
 

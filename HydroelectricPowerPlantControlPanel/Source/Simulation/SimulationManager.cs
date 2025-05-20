@@ -28,7 +28,12 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
         Measurments.MeasurementCollector generatedPower;
 
+        Measurments.EnableDisableController emergencyGateController;
 
+        public Measurments.EnableDisableController EmergencyGateController
+        {
+            get { return emergencyGateController; }
+        }
         public Measurments.MeasurementCollector GeneratedPower
         {
             get { return generatedPower; }
@@ -78,6 +83,8 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
             generatorRPM = new Measurments.MeasurementCollector(200, 0, 300000, "RPM/min");
 
             generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "m^3/h");
+
+            emergencyGateController = new Measurments.EnableDisableController();
 
             waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
         }

@@ -30,7 +30,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.Interfaces
             GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(940, 690), simulationManager.GeneratorRPM, "Obroty generatora"));
             GUI_Objects.Add(new GUI.DataDisplayBox(new Vector2f(940, 790), simulationManager.GeneratedPower, "Generowana moc"));
 
-
+            GUI_Objects.Add(new GUI.EnableDisableButton(new Vector2f(500, 500),simulationManager.EmergencyGateController , "Otworz sluze awaryjna"));
 
 
             controller = new Measurments.MeasurmentsController(50,0,100, "%",1);
