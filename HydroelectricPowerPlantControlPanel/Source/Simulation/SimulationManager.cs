@@ -86,7 +86,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             generatorRPM = new Measurments.MeasurementCollector(0, 0, 300000, "RPM/min");
 
-            generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "m^3/h");
+            generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "kW");
 
             emergencyGateController = new Measurments.EnableDisableController();
 
@@ -104,15 +104,17 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             deltaTime = 0.277;
 
-            waterFlowOutPerHour.setValue(calculateWaterFlowOut());
+            waterLevel.setValue(calculateWaterLevel());
+
+            generatorRPM.setValue(calculateTourbineRPM());
+
+            generatedPower.setValue(calculateElectricalPower()/1000);
+
+            waterFlowOutPerHour.setValue(calculateWaterFlowOut(generatorRPM.Value));
 
             currentWaterVolume += waterFlowInController.Value - waterFlowOutPerHour.Value;
 
             if (currentWaterVolume < 0) currentWaterVolume = 0;
-
-            waterLevel.setValue(calculateWaterLevel());
-
-            generatorRPM.setValue(calculateTourbineRPM());
         }
 
         //obliczanie stopnia otwarcia bramy
@@ -122,9 +124,14 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         }
 
         //Obliczanie ilosci wyplywajacej wody na podstawie wysokosci slupa wody i poziomu otwarcia bramy ()m3/h
-        private double calculateWaterFlowOut()
+        private double calculateWaterFlowOut(double generatorRPM)
         {
-            return calculateWaterFallVelocity() * calculateOpenedAreaOfGate();
+            double baseFlow = calculateWaterFallVelocity() * calculateOpenedAreaOfGate();
+            double RPMwithNoResistance = 400000;
+
+            double RPMfactor = Math.Clamp(generatorRPM, 0, RPMwithNoResistance) / RPMwithNoResistance;
+
+            return baseFlow * RPMfactor;
         }
 
         //Obliczanie poziomu tafli wody na podstawie szerokosci, dlugosci i ilosci wody (m3) w zbiorniku
@@ -146,9 +153,9 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         }
         public double calculateWaterForce()
         {
-            double area = 200; //Powierzchnia wirnika turbiny
+            double area = 20; //Powierzchnia wirnika turbiny
 
-            return calculateWaterPressure() * area;
+            return calculateWaterPressure() * area * calculateOpenedAreaOfGate();
         }
 
         public double calculateTurbineTorque()
@@ -171,6 +178,12 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
             return (calculateTurbineTorque()+ calculateTourbineResistance()) / tourbineMomentOfInertia;
         }
+        public double calculateTourbineKineticForce()
+        {
+            double tourbineMomentOfInertia = 100000; //moment bezwładnosci turbiny [kg/m2]
+
+            return tourbineMomentOfInertia * tourbineAngularVelocity / 2;
+        }
 
         public void updateAngularVelocity(double deltaTime = 1)
         {
@@ -181,7 +194,7 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         {
             updateAngularVelocity();
 
-            double RPM = tourbineAngularVelocity * 60 / 2 * Math.PI;
+            double RPM = tourbineAngularVelocity * 60 / (2 * Math.PI);
 
             if (RPM < 0.01 && RPM > -0.01)
             {
@@ -192,7 +205,16 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
             return RPM;
         }
 
-        //obroty obliczone, teraz generowana moc do obliczenia. i wartosci do wyregulowania
-        //dodatkowo szybkosc przeplywu wody musi byc responsywna na syzbkosc obrotu generatora
+        public double calculateMechanicalPower()
+        {
+            return calculateTurbineTorque() * tourbineAngularVelocity;
+        }
+
+        public double calculateElectricalPower()
+        {
+            double tourbineEfficiency = 0.85;
+
+            return calculateTourbineKineticForce() * tourbineEfficiency;
+        }
     }
 }
