@@ -1,22 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
-
-namespace HydroelectricPowerPlantControlPanel.Source.Simulation
+﻿namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 {
     public class SimulationManager
     {
+        //Pole parametrów obiektów symulacji
+        double waterDensity = 1000;// gestość wody
+
+        //Parametry zbiornika wodnego
         //Uproszczony kształt zbiornika wodnego jest prostopadłościanem o wymiarach 1km x 3km x 100m
-        double tankWidth, tankHeight, tankDepth;
-        double currentWaterVolume;
+        static double tankDepth = 3000;
+        static double tankWidth = 1000;
+        static double tankHeight = 100;
+        //Objetosc wody w zbiorniku w m^3
+        double currentWaterVolume = (tankDepth * tankWidth * tankHeight) * 0.60; // - Zbiornik wodny wypełniony do połowy
 
-        double gateOpeningArea;
+        //Parametry zapory wodnej
+        static double waterDamHeight = tankHeight;
+        static double gateOpeningArea = 8; //Pole otworu śluzy
+        static double tourbineThrottleFactor = 0.2;
 
-        double tourbineAngularVelocity;
+        //Parametry turbiny
+        static double RPMwithNoResistance = 3000; //Wartość obrotów turbiny nie generujących oporu dla przepływu wody
+        static double tourbineArea = 10; //Powierzchnia wirnika turbiny w m^2
+        static double tourbineRadius = 1.5; //Promień wirnika turbiny w m.
+        static double tourbineCanalRadius = 1.54;
+        static double canalFillFactor = tourbineRadius / tourbineCanalRadius; //Współczynnik wypełnienia kanału wirnikiem
+        static double tourbineResistance = 9000; // wspolczynnik oporu turbiny
+        static double tourbineMomentOfInertia = 340000; //moment bezwładnosci turbiny [kg/m2]
+        static double tourbineEfficiency = 0.70; //Wydajność turbiny
+        static double tourbineElectricalEfficiency = 0.75; 
+        static double generatorLoadFactor = 12000;   // moment oporowy generatora [Nm/(rad/s)]
+
+        double tourbineAngularVelocity = 0; //Początkowa prędkość kątowa turbiny
+
+        static double emergencyGateLevel = 65; //Wysokość śluzy awaryjnej
+        static double emergencyGateArea = 60; //Pole powierzchni śluzy awaryjnej
+
+        //Na podstawie realistycznych wartości zapór hydroelektrycznych
+
 
         Measurments.MeasurementCollector waterLevel;
 
@@ -66,31 +86,19 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         }
         public SimulationManager()
         {
-            tankDepth = 3000;
-            tankWidth = 1000;
-            tankHeight = 100;
+            waterLevel = new Measurments.MeasurementCollector(currentWaterVolume, 0, double.MaxValue, "m");
 
-            currentWaterVolume = 0;
+            gateLevelController = new Measurments.MeasurmentsController(0, 0, 100, "%", 1);
 
-            gateOpeningArea = 8;
+            waterFlowOutPerHour = new Measurments.MeasurementCollector(0, 0, double.MaxValue, "l/h");
 
-            tourbineAngularVelocity = 0;
+            waterFlowInController = new Measurments.MeasurmentsController(0, 0, double.MaxValue, "l/h", 1000);
 
-            waterLevel = new Measurments.MeasurementCollector(((int)currentWaterVolume), 0, 300000000, "m");
+            generatorRPM = new Measurments.MeasurementCollector(0, 0, double.MaxValue, "RPM");
 
-            gateLevelController = new Measurments.MeasurmentsController(25, 0, 100, "%", 1);
-
-            waterFlowOutPerHour = new Measurments.MeasurementCollector(0, 0, int.MaxValue, "m^3/h");
-
-            waterFlowInController = new Measurments.MeasurmentsController(0, 0, 300000, "m^3/h", 100);
-
-            generatorRPM = new Measurments.MeasurementCollector(0, 0, 300000, "RPM/min");
-
-            generatedPower = new Measurments.MeasurementCollector(200, 0, 300000, "kW");
+            generatedPower = new Measurments.MeasurementCollector(0, 0, double.MaxValue, "kW");
 
             emergencyGateController = new Measurments.EnableDisableController();
-
-            waterLevel.setValue((int)(currentWaterVolume * 0.001 / tankDepth * tankWidth));
         }
 
         ~SimulationManager()
@@ -98,21 +106,20 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
 
         }
 
+        //Parametr delta time, porzucony
         public void update(double deltaTime)
         {
-            deltaTime = 0.0002777;
-
-            deltaTime = 0.277;
-
             waterLevel.setValue(calculateWaterLevel());
 
             generatorRPM.setValue(calculateTourbineRPM());
 
-            generatedPower.setValue(calculateElectricalPower()/1000);
+            generatedPower.setValue(calculateElectricalPower()/1000); // <- Zamiana na kW
 
             waterFlowOutPerHour.setValue(calculateWaterFlowOut(generatorRPM.Value));
 
             currentWaterVolume += waterFlowInController.Value - waterFlowOutPerHour.Value;
+
+            currentWaterVolume -= calculateEmergencyGateFlowOut(calculateWaterLevel()) * emergencyGateController.Value;
 
             if (currentWaterVolume < 0) currentWaterVolume = 0;
         }
@@ -120,77 +127,92 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
         //obliczanie stopnia otwarcia bramy
         private double calculateOpenedAreaOfGate()
         {
-            return gateOpeningArea * gateLevelController.Value;
+            return gateOpeningArea * (gateLevelController.Value/100); //Zamiana na procenty
+        }
+
+        //Obliczanie ilosci wody wypływającej z śluzy awaryjnej
+        private double calculateEmergencyGateFlowOut(double waterLevel)
+        {
+            double waterLevelAboveEmergencyGate = waterLevel - emergencyGateLevel;
+            if (waterLevelAboveEmergencyGate < 0) return 0;
+            else return Math.Sqrt(2 * waterLevelAboveEmergencyGate * 9.81) * emergencyGateArea * 1000;
         }
 
         //Obliczanie ilosci wyplywajacej wody na podstawie wysokosci slupa wody i poziomu otwarcia bramy ()m3/h
         private double calculateWaterFlowOut(double generatorRPM)
         {
             double baseFlow = calculateWaterFallVelocity() * calculateOpenedAreaOfGate();
-            double RPMwithNoResistance = 400000;
 
-            double RPMfactor = Math.Clamp(generatorRPM, 0, RPMwithNoResistance) / RPMwithNoResistance;
+            double RPMfactor = 1 - Math.Clamp(generatorRPM, 0, RPMwithNoResistance) / RPMwithNoResistance;
+            double throttle = 1.0 - tourbineThrottleFactor * RPMfactor;
 
-            return baseFlow * RPMfactor;
+            return baseFlow * throttle * 1000;
         }
 
         //Obliczanie poziomu tafli wody na podstawie szerokosci, dlugosci i ilosci wody (m3) w zbiorniku
-        public double calculateWaterLevel()
+        private double calculateWaterLevel()
         {
             return currentWaterVolume / (tankWidth * tankDepth);
         }
 
-        public double calculateWaterFallVelocity()
+        //Prędkość graniczna - Szybkość "Spadania" wody
+        private double calculateWaterFallVelocity()
         {
             return Math.Sqrt(2 * waterLevel.Value * 9.81);
         }
 
-        public double calculateWaterPressure()
+        //Cisnienie wody
+        private double calculateWaterPressure()
         {
-            double waterDensity = 1000;// gestość wody, przeniesc do static
-
-            return 1000 * waterLevel.Value * 9.81;
-        }
-        public double calculateWaterForce()
-        {
-            double area = 20; //Powierzchnia wirnika turbiny
-
-            return calculateWaterPressure() * area * calculateOpenedAreaOfGate();
+            return waterDensity * waterLevel.Value * 9.81;
         }
 
-        public double calculateTurbineTorque()
+        //Siła wywierana przez wodę na turbinę
+        private double calculateWaterForce()
         {
-            double r = 5; //Promień wirnika turbiny w m. Przenieść do static
-
-            return calculateWaterForce() * r;
+            double flow_m3s = calculateWaterFlowOut(generatorRPM.Value) / 3600; //<- zamiana z m^3/h na m^3/s
+            double waterVelocity = calculateWaterFallVelocity();
+            return waterDensity * flow_m3s * waterVelocity;
         }
 
-        public double calculateTourbineResistance()
+        //Moment siły
+        private double calculateTurbineTorque()
         {
-            double resistance = 1100; // wspolczynnik oporu turbiny
-
-            return tourbineAngularVelocity * (-resistance);
+            return calculateWaterForce() * tourbineRadius* tourbineEfficiency * canalFillFactor;
         }
 
-        public double calculateTourbineAngularAcceleration()
+        //Opór turbiny
+        private double calculateTourbineResistance()
         {
-            double tourbineMomentOfInertia = 100000; //moment bezwładnosci turbiny [kg/m2]
+            return tourbineAngularVelocity * (-tourbineResistance);
+        }
 
+        //Przyśpieszenie kątowe turbiny
+        private double calculateTourbineAngularAcceleration()
+        {
             return (calculateTurbineTorque()+ calculateTourbineResistance()) / tourbineMomentOfInertia;
         }
-        public double calculateTourbineKineticForce()
-        {
-            double tourbineMomentOfInertia = 100000; //moment bezwładnosci turbiny [kg/m2]
 
+        //Wypadkowa momentu sił
+        private double calculateResultantTorque()
+        {
+            return calculateTurbineTorque() + calculateTourbineResistance();
+        }
+
+        //Siła kinetyczna turbiny
+        private double calculateTourbineKineticForce()
+        {
             return tourbineMomentOfInertia * tourbineAngularVelocity / 2;
         }
 
-        public void updateAngularVelocity(double deltaTime = 1)
+        //Przyśpieszenie kątowe turbiny - aktualizacja
+        private void updateAngularVelocity(double deltaTime = 1)
         {
             tourbineAngularVelocity += calculateTourbineAngularAcceleration() * deltaTime;
         }
 
-        public double calculateTourbineRPM()
+        //Obroty turbiny
+        private double calculateTourbineRPM()
         {
             updateAngularVelocity();
 
@@ -205,16 +227,23 @@ namespace HydroelectricPowerPlantControlPanel.Source.Simulation
             return RPM;
         }
 
-        public double calculateMechanicalPower()
+        //Moc generowana przez generator
+        private double calculateGeneratorTorque()
         {
-            return calculateTurbineTorque() * tourbineAngularVelocity;
+            return generatorLoadFactor * tourbineAngularVelocity;
         }
 
-        public double calculateElectricalPower()
+        //Moc mechaniczna generowana przez turbine
+        private double calculateMechanicalPower()
         {
-            double tourbineEfficiency = 0.85;
+            double mechanicalPower = calculateWaterPressure() * calculateWaterFlowOut(generatorRPM.Value)/3600;
+            return Math.Max(0, mechanicalPower);
+        }
 
-            return calculateTourbineKineticForce() * tourbineEfficiency;
+        //Moc generowana przez turbine
+        private double calculateElectricalPower()
+        {
+            return calculateGeneratorTorque() * tourbineElectricalEfficiency;
         }
     }
 }
